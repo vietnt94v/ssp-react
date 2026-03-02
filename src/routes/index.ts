@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 import DefaultLayout from '../layouts/DefaultLayout';
-import { Guest, Home, Product } from '../pages';
+import { Guest, Home, Photo, Product } from '../pages';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +18,10 @@ const router = createBrowserRouter([
       {
         path: '/product',
         Component: Product,
+      },
+      {
+        path: '/photo',
+        Component: Photo,
       },
     ],
   },
