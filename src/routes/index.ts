@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 import DefaultLayout from '../layouts/DefaultLayout';
-import { Guest, Home } from '../pages';
+import { Guest, Home, Product } from '../pages';
 
 const router = createBrowserRouter([
   {
@@ -14,6 +14,10 @@ const router = createBrowserRouter([
       {
         path: '/guest',
         Component: Guest,
+      },
+      {
+        path: '/product',
+        Component: Product,
       },
     ],
   },

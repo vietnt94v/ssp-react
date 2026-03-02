@@ -1,30 +1,16 @@
-import { useEffect, useState } from 'react';
-
-const ChildComponent = () => {
-  const handleResize = () => {
-    console.log('resize');
-  };
-
-  useEffect(() => {
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return <div>ChildComponent</div>;
-};
+import useCounter from '../../hooks/useCounter';
 
 const Home = () => {
-  const [isShow, setIsShow] = useState(false);
+  const { count, increment, decrement, reset } = useCounter();
 
   return (
-    <div>
-      <button onClick={() => setIsShow(!isShow)}>Toggle</button>
-
-      {isShow ? <ChildComponent /> : null}
-    </div>
+    <>
+      <div>Home</div>
+      <div>Count: {count}</div>
+      <button onClick={increment}>Increment</button>
+      <button onClick={decrement}>Decrement</button>
+      <button onClick={reset}>Reset</button>
+    </>
   );
 };
 
