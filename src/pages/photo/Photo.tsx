@@ -1,22 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
+import { getProductsPaginated, type Product } from '../../api';
 
 const COLUMN_COUNT = 4;
-const ROW_HEIGHT = 180;
-const INITIAL_ITEM_COUNT = 24;
-const BATCH_SIZE = 20;
+const ROW_HEIGHT = 220;
+const LIMIT = 19;
 const OVERSCAN_ROWS = 2;
 
-const getPicsumUrl = (index: number, size = 300) =>
-  `https://picsum.photos/seed/${index}/${size}/${size}`;
-
 const Photo = () => {
-  const [itemCount, setItemCount] = useState(INITIAL_ITEM_COUNT);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastLoadAtRef = useRef(0);
+  const loadingRef = useRef(false);
 
-  const rowCount = Math.ceil(itemCount / COLUMN_COUNT);
+  const rowCount = Math.ceil(products.length / COLUMN_COUNT);
   const totalHeight = rowCount * ROW_HEIGHT;
 
   useEffect(() => {
@@ -26,6 +25,15 @@ const Photo = () => {
     const ro = new ResizeObserver(() => setContainerHeight(el.clientHeight));
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    getProductsPaginated(LIMIT, 0)
+      .then(({ products: data, total }) => {
+        setProducts(data);
+        setHasMore(data.length < total);
+      })
+      .catch(() => setHasMore(false));
   }, []);
 
   const startRow = Math.max(
@@ -43,9 +51,27 @@ const Photo = () => {
     const top = el.scrollTop;
     setScrollTop(top);
     const bottom = top + el.clientHeight;
-    if (bottom >= totalHeight - 200 && itemCount >= lastLoadAtRef.current) {
-      lastLoadAtRef.current = itemCount + BATCH_SIZE;
-      setItemCount(prev => prev + BATCH_SIZE);
+    if (
+      bottom >= totalHeight - 200 &&
+      !loadingRef.current &&
+      hasMore &&
+      !loading
+    ) {
+      loadingRef.current = true;
+      setLoading(true);
+      getProductsPaginated(LIMIT, products.length)
+        .then(({ products: data, total }) => {
+          setProducts(prev => {
+            const next = [...prev, ...data];
+            setHasMore(next.length < total);
+            return next;
+          });
+        })
+        .catch(() => setHasMore(false))
+        .finally(() => {
+          setLoading(false);
+          loadingRef.current = false;
+        });
     }
   };
 
@@ -85,36 +111,69 @@ const Photo = () => {
           >
             {Array.from({ length: COLUMN_COUNT }, (_, colIndex) => {
               const index = rowIndex * COLUMN_COUNT + colIndex;
-              if (index >= itemCount) return null;
+              if (index >= products.length) return null;
+              const product = products[index];
               return (
                 <div
-                  key={index}
+                  key={product.id}
                   style={{
                     flex: 1,
-                    padding: 4,
+                    padding: 8,
+                    margin: 4,
                     boxSizing: 'border-box',
-                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    border: '1px solid #eee',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    background: '#333',
                   }}
                 >
-                  <p style={{ position: 'absolute', bottom: 10, right: 15, margin: 0 }}>{index}</p>
-                  <img
-                    src={getPicsumUrl(index)}
-                    alt=''
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                      display: 'block',
-                    }}
-                    loading='lazy'
-                  />
+                  {product.thumbnail ? (
+                    <img
+                      src={product.thumbnail}
+                      alt=''
+                      style={{
+                        width: '100%',
+                        height: 100,
+                        objectFit: 'cover',
+                      }}
+                      loading='lazy'
+                    />
+                  ) : null}
+                  <div style={{ padding: 8, flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                      ID: {product.id}
+                    </p>
+                    <p
+                      style={{
+                        margin: '4px 0 0',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {product.title}
+                    </p>
+                    <p style={{ margin: '4px 0 0', fontSize: 14 }}>
+                      ${product.price.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               );
             })}
           </div>
         ))}
       </div>
+      {loading && (
+        <p
+          style={{ textAlign: 'center', padding: 16, margin: 0, color: 'red' }}
+        >
+          Loading...
+        </p>
+      )}
     </div>
   );
 };
