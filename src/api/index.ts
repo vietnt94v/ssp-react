@@ -23,20 +23,9 @@ export interface Product {
   title: string;
   description: string;
   price: number;
-  tag: string[];
+  tags: string[];
   thumbnail?: string;
 }
-
-export const getProductsPaginated = async (
-  limit: number,
-  skip: number,
-): Promise<{ products: Product[]; total: number }> => {
-  const res = await api.get<{
-    products: Product[];
-    total: number;
-  }>('/products', { params: { limit, skip } });
-  return { products: res.data.products, total: res.data.total };
-};
 
 export const getUserById = async (id: number): Promise<User> => {
   const res = await api.get(`/users/${id}`);
@@ -51,6 +40,22 @@ export const getPostsByUser = async (userId: number): Promise<Post[]> => {
 export const getProducts = async (): Promise<Product[]> => {
   const res = await api.get('/products', {});
   return res.data.products;
+};
+
+export const getProductsPaginated = async (
+  limit: number,
+  skip: number,
+): Promise<{ products: Product[]; total: number; skip: number }> => {
+  const res = await api.get<{
+    products: Product[];
+    total: number;
+    skip: number;
+  }>('/products', { params: { limit, skip } });
+  return {
+    products: res.data.products,
+    total: res.data.total,
+    skip: res.data.skip,
+  };
 };
 
 export const getProductById = async (id: number): Promise<Product> => {
