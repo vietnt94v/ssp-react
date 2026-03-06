@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getProductsPaginated } from '../../api';
+import { throttle } from '../../utils';
 
 const LIMIT = 32;
 const SKIP = 0;
@@ -7,26 +8,6 @@ const COLUMN_COUNT = 4;
 const ROW_HEIGHT = 150;
 const OVERSCAN_ROWS = 2;
 const SCROLL_THROTTLE_MS = 80;
-
-function throttle<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
-  let last = 0;
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return ((...args: unknown[]) => {
-    const now = Date.now();
-    const elapsed = now - last;
-    if (timeout) clearTimeout(timeout);
-    if (elapsed >= ms || last === 0) {
-      last = now;
-      fn(...args);
-    } else {
-      timeout = setTimeout(() => {
-        last = Date.now();
-        timeout = null;
-        fn(...args);
-      }, ms - elapsed);
-    }
-  }) as T;
-}
 
 interface ProductProps {
   id: number;
@@ -67,10 +48,7 @@ const Product = () => {
     return () => ro.disconnect();
   }, []);
 
-  const initialFetchDoneRef = useRef(false);
   useEffect(() => {
-    if (initialFetchDoneRef.current) return;
-    initialFetchDoneRef.current = true;
     getProductsPaginated(LIMIT, SKIP)
       .then(({ products: data, total }) => {
         setProducts(data);
